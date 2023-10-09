@@ -1,2 +1,3 @@
-port_waste_example.xlsx
-master_example.xlsx
+*.xlsx
+*.xls
+*.numbers
