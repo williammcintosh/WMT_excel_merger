@@ -23,14 +23,12 @@ def get_port_waste_tab(input_month, input_year, port_waste_file, verbose=False):
     return None
 
 
-def excel_merger(verbose=False):
-    # Get user input for year and month
-    input_year = int(input("Enter the year: "))-2000
-    input_month = input("Enter the month: ")
+def excel_merger(input_year, input_month, verbose=False):
 
     # Open the port_waste.xlsx file
     try:
-        port_waste_file = openpyxl.load_workbook('PORT WASTE COLLECTION  RECY REPORT.xlsx')
+        # port_waste_file = openpyxl.load_workbook('PORT WASTE COLLECTION  RECY REPORT.xlsx')
+        port_waste_file = openpyxl.load_workbook('PORT WASTE COLLECTION  RECY REPORT.xlsx', data_only=True)
     except openpyxl.utils.exceptions.InvalidFileException as e:
         if type(e) == openpyxl.utils.exceptions.InvalidFileException:
             print('''
@@ -100,13 +98,14 @@ def excel_merger(verbose=False):
         # A match was found, store the cell in port_waste.xlsx
         if port_waste_row is not None and port_waste_column is not None:
             port_waste_cell = port_waste_sheet.cell(row=port_waste_row, column=port_waste_column)
-            port_waste_value = port_waste_cell.value
+            # port_waste_value = port_waste_cell.value
+            port_waste_value = port_waste_cell.internal_value
             port_waste_note = port_waste_cell.comment.text if port_waste_cell.comment else None
-            if verbose: print(f"\nport_waste_row = {port_waste_row}")
-            if verbose: print(f"port_waste_column = {port_waste_column}")
-            if verbose: print(f"port_waste_cell = {port_waste_cell}")
-            if verbose: print(f"port_waste_value = {port_waste_value}")
-            if verbose: print(f"port_waste_note = {port_waste_note}")
+            if verbose: print(f"\nport_waste_row\t: {port_waste_row}")
+            if verbose: print(f"port_waste_column\t: {port_waste_column}")
+            if verbose: print(f"port_waste_cell\t: {port_waste_cell}")
+            if verbose: print(f"port_waste_value\t: {port_waste_value}")
+            if verbose: print(f"port_waste_note\t: {port_waste_note}")
         else:
             if port_waste_row is None:
                 print(f'''
@@ -168,30 +167,35 @@ def excel_merger(verbose=False):
             master_cell = master_sheet.cell(row=master_row.row, column=master_column.column)
         else:
             if master_column is None and master_row is not None:
-                print(f"""
+                print(f'''
                     Could not find the desired row in the 'Mastersheet.xlsx' file.\n
                     Compare the spelling of '{map_row[2].value}' under "Tab" for both the
                     'Mapping.xlsx' file and the 'Mastersheet.xlsx' file.
                     Compare the spelling of '{map_row[3].value}' under "Type" for both the
                     'Mapping.xlsx' file and the 'Mastersheet.xlsx' file.
-                """)
+                ''')
             elif master_row is None and master_column is not None:
-                print("""
+                print('''
                     WILL!? You done screwed up!
                     Compare the spelling of '{input_month}' with the rows of the
                     'Mastersheet.xlsx' file!
-                """)
+                ''')
 
         # Update the formula in the master cell
         if master_cell is not None and port_waste_value is not None:
-            
-            formula = f"{master_cell.value}+{port_waste_value}" if master_cell.value is not None else f"{port_waste_value}" 
+            if master_cell.value is not None:
+                # formula = f"={master_cell.value}+{port_waste_value}"
+                # formula = f"={master_cell.coordinate}+{port_waste_value}"
+                formula = f"={master_cell.coordinate[0]}{master_cell.coordinate[1:]}+{port_waste_value}"
+            else:
+                formula = f"=0+{port_waste_value}"
             master_cell.value = formula
+            # master_cell.set_explicit_value(formula, data_type='f')
             if port_waste_note is not None:
                 master_cell.comment = openpyxl.comments.Comment(port_waste_note, "Author")
 
-        if verbose: print(f"\nport_waste_cell = {port_waste_cell}")
-        if verbose: print(f"master_cell = {master_cell}")
+        if verbose: print(f"\nport_waste_cell\t: {port_waste_cell}")
+        if verbose: print(f"master_cell\t: {master_cell}")
         if verbose: print("\n")
 
     # Save the changes to master.xlsx
@@ -201,6 +205,12 @@ def excel_merger(verbose=False):
     master_file.save(new_file_name)
 
 if __name__ == "__main__":
+    
+    # Get user input for year and month
     verbose = input("Verbose? ([y]/n): ")
+    input_year = int(input("Enter the year\t: "))-2000
+    input_month = input("Enter the month\t: ")
     verbose = True if verbose.lower() == 'y' else False
-    excel_merger(verbose)
+
+    # Run main program
+    excel_merger(input_year, input_month, verbose)
