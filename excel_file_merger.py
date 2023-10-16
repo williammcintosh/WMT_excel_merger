@@ -4,6 +4,22 @@ from datetime import datetime
 import calendar
 # import pandas as pd
 
+
+# This function is for Location ref# 1207905-4.39
+def update_master_material(notes):
+    if "plastic" in notes.lower():
+        return "Plastics (i.e, film, rigids)"
+    if "glass" in notes.lower():
+        return "Glass"
+    if "grease" in notes.lower():
+        return "Grease ORCO / PPV"
+    hazwords = ["batter", "HID", "e waste", "light tube", "bulb"]
+    if hazwords in notes.lower():
+        return "Universal/Hazardous Waste"
+    # "metal", "wood", 
+    return "Misc."
+
+
 def get_port_waste_tab(input_month, input_year, port_waste_file, verbose=False):
     input_year += 2000
     all_months = list(calendar.month_name)
@@ -57,10 +73,11 @@ def excel_merger(input_year, input_month, verbose=False):
 
         # Get values for each row from Mapping file
         try:
-            site_description = "".join(map_row[0].value.split()).lower()
-            material_collected = "".join(map_row[1].value.split()).lower()
-            master_tab = map_row[2].value
-            master_material_type = "".join(map_row[3].value.split()).lower()
+            location = "".join(map_row[0].value.split()).lower()
+            site_description = "".join(map_row[1].value.split()).lower()
+            material_collected = "".join(map_row[2].value.split()).lower()
+            master_tab = map_row[3].value
+            master_material_type = "".join(map_row[4].value.split()).lower()
             port_waste_note = None
         except:
             break # EOF, break out!
@@ -75,11 +92,22 @@ def excel_merger(input_year, input_month, verbose=False):
         if verbose: print(f"{'-'*60}")
         # Find the row in port_waste.xlsx with both matching site_description and material_collected
         for row in port_waste_sheet.iter_rows(min_row=4):
-            if verbose: print(f"\tComparing:\t{row[1].value}\t\t'|'\t{map_row[0].value}")
-            if verbose: print(f"\tComparing:\t{row[4].value}\t\t'|'\t{map_row[1].value}")
-            if row[1].value is not None and "".join(row[1].value.split()).lower() == site_description and row[4].value is not None and "".join(row[4].value.split()).lower() == material_collected:
-                port_waste_row = row[1].row
-                break
+
+            try:
+                port_location = "".join(row[0].value.split()).lower()
+                port_site_description = "".join(row[1].value.split()).lower()
+                port_material_collected = "".join(row[4].value.split()).lower()
+            except:
+                pass
+
+            if verbose: print(f"\tComparing:\t{row[0].value}\t\t'|'\t{map_row[0].value}".replace('\n', ' ')) 
+            if verbose: print(f"\t\t\t{row[1].value}\t\t'|'\t{map_row[1].value}".replace('\n', ' '))
+            if verbose: print(f"\t\t\t{row[4].value}\t\t'|'\t{map_row[2].value}".replace('\n', ' '))
+            if port_location == location: 
+                if port_site_description == site_description:
+                    if port_material_collected == material_collected:
+                        port_waste_row = row[1].row
+                        break
         else:
             port_waste_row = None
 
@@ -101,24 +129,29 @@ def excel_merger(input_year, input_month, verbose=False):
             # port_waste_value = port_waste_cell.value
             port_waste_value = port_waste_cell.internal_value
             port_waste_note = port_waste_cell.comment.text if port_waste_cell.comment else None
-            if verbose: print(f"\nport_waste_row\t: {port_waste_row}")
+            if verbose: print(f"\nport_waste_row\t\t: {port_waste_row}")
             if verbose: print(f"port_waste_column\t: {port_waste_column}")
-            if verbose: print(f"port_waste_cell\t: {port_waste_cell}")
+            if verbose: print(f"port_waste_cell\t\t: {port_waste_cell}")
             if verbose: print(f"port_waste_value\t: {port_waste_value}")
-            if verbose: print(f"port_waste_note\t: {port_waste_note}")
+            if verbose: print(f"port_waste_note\t\t: {port_waste_note}")
         else:
             if port_waste_row is None:
                 print(f'''
-                    Could not find the desired row in the 'PORT WASTE COLLECTION  RECY REPORT.xlsx' file.
+                    I could not find the desired row in the 'PORT WASTE COLLECTION  RECY REPORT.xlsx' file.
 
-                    Compare the spelling of '{map_row[0].value}' under "Site Description" for both the
-                    'Mapping.xlsx' file and the 'PORT WASTE COLLECTION  RECY REPORT.xlsx' file.
-                    Compare the spelling of '{map_row[1].value}' under "Material Collected" for both the
-                    'Mapping.xlsx' file and the 'PORT WASTE COLLECTION  RECY REPORT.xlsx' file. 
+                    I was trying to find a row that had all three values:
+                    \t'{map_row[0].value}' under "Location"
+                    \t'{map_row[1].value}' under "Site Description"
+                    \t'{map_row[2].value}' under "Material Collected"
+                    
+                    Please examine the spelling for both the 'Mapping.xlsx' file
+                    and the 'PORT WASTE COLLECTION  RECY REPORT.xlsx' file.
+                    Also, please examine that all three values are correct,
+                    maybe the Mapping.xlsx file reads "Comingle" when it should be "Glass"?\n
                 ''')
             if port_waste_column is None:
                 print('''
-                    WILL!? You done screwed up!
+                    WILL MCINTOSH! You screwed up while coding!
                     Compare the spelling of '{input_month}' with the columns of the
                     'PORT WASTE COLLECTION  RECY REPORT.xlsx' file!
                 ''')
@@ -126,6 +159,9 @@ def excel_merger(input_year, input_month, verbose=False):
         # If the located cell is blank, make it "0"
         port_waste_cell = 0 if port_waste_cell is None else port_waste_cell
 
+        # Updates master material based on the notes
+        if master_material_type == "CHECK CELL NOTES":
+            master_material_type = update_master_material(port_waste_note)
 
         if verbose: print(f"\nLocating Column from Master:")
         if verbose: print("\t\t\tFound Val\t'|'\tDesire Val")
@@ -168,15 +204,19 @@ def excel_merger(input_year, input_month, verbose=False):
         else:
             if master_column is None and master_row is not None:
                 print(f'''
-                    Could not find the desired row in the 'Mastersheet.xlsx' file.\n
-                    Compare the spelling of '{map_row[2].value}' under "Tab" for both the
-                    'Mapping.xlsx' file and the 'Mastersheet.xlsx' file.
-                    Compare the spelling of '{map_row[3].value}' under "Type" for both the
-                    'Mapping.xlsx' file and the 'Mastersheet.xlsx' file.
+                    I could not find the desired column in the 'Mastersheet.xlsx' file.
+
+                    I was trying to find a tab and column that had these values:
+                    \t '{map_row[3].value}' under "Tab"
+                    \t'{map_row[4].value}' under "Type"
+                    Please examine the spelling for both the 'Mapping.xlsx'
+                    file and the 'Mastersheet.xlsx' file.
+                    Also, please examine that both values are correct,
+                    maybe the Mapping.xlsx file reads "Metal" when it should be "Glass"?\n
                 ''')
             elif master_row is None and master_column is not None:
                 print('''
-                    WILL!? You done screwed up!
+                    WILL MCINTOSH! You screwed up while coding!
                     Compare the spelling of '{input_month}' with the rows of the
                     'Mastersheet.xlsx' file!
                 ''')
@@ -184,9 +224,9 @@ def excel_merger(input_year, input_month, verbose=False):
         # Update the formula in the master cell
         if master_cell is not None and port_waste_value is not None:
             if master_cell.value is not None:
-                # formula = f"={master_cell.value}+{port_waste_value}"
+                formula = f"{master_cell.internal_value}+{port_waste_value}"
                 # formula = f"={master_cell.coordinate}+{port_waste_value}"
-                formula = f"={master_cell.coordinate[0]}{master_cell.coordinate[1:]}+{port_waste_value}"
+                # formula = f"={master_cell.coordinate[0]}{master_cell.coordinate[1:]}+{port_waste_value}"
             else:
                 formula = f"=0+{port_waste_value}"
             master_cell.value = formula
@@ -194,8 +234,8 @@ def excel_merger(input_year, input_month, verbose=False):
             if port_waste_note is not None:
                 master_cell.comment = openpyxl.comments.Comment(port_waste_note, "Author")
 
-        if verbose: print(f"\nport_waste_cell\t: {port_waste_cell}")
-        if verbose: print(f"master_cell\t: {master_cell}")
+        if verbose: print(f"\nport_waste_cell\t\t: {port_waste_cell}")
+        if verbose: print(f"master_cell\t\t: {master_cell}")
         if verbose: print("\n")
 
     # Save the changes to master.xlsx
