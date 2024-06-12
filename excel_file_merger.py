@@ -227,15 +227,25 @@ def get_mastersheet_cell(mastersheet_sheet, mastersheet_row, mastersheet_column,
 
 
 def update_mastersheet_cell_value_n_comment(mastersheet_cell, port_waste_value, port_waste_note):
-    # Update the formula in the master cell
-    if mastersheet_cell is not None and port_waste_value is not None:
-        if mastersheet_cell.value is not None:
-            formula = f"={mastersheet_cell.internal_value}+{port_waste_value}"
-        else:
-            formula = f"=0+{port_waste_value}"
-        mastersheet_cell.value = formula
+    if mastersheet_cell is not None:
+        # Initialize the formula with the current cell value or zero if it's empty
+        existing_formula = mastersheet_cell.value if mastersheet_cell.value else "=0"
+        # Ensure it's a string and starts with "="
+        if not isinstance(existing_formula, str) or not existing_formula.startswith("="):
+            existing_formula = f"={existing_formula}"
+        # Extract the existing formula components (values) excluding the initial "="
+        existing_values = existing_formula[1:].split('+')
+        # Add the new port waste value, treating None as 0
+        port_waste_value = 0 if port_waste_value is None else port_waste_value
+        existing_values.append(str(port_waste_value))
+        # Create a new formula by joining all values with "+"
+        new_formula = "=" + "+".join(existing_values)
+        mastersheet_cell.value = new_formula
+        # Add the comment if there's any
         if port_waste_note is not None:
             mastersheet_cell.comment = openpyxl.comments.Comment(port_waste_note, "Author")
+        # Print the new formula for debugging
+        print(f"Updated formula in cell {mastersheet_cell.coordinate}: {new_formula}")
     
 
 def excel_merger(input_year, input_month):
