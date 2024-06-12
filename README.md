@@ -118,4 +118,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 
 ## Contact
 
-If you have any questions or issues, please feel free to contact me at will@gradient-ascent.nz.
+If you have any questions or issues, please feel free to contact me at will@ahead.nz.
