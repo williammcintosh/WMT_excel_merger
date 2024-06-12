@@ -7,6 +7,7 @@ This project is designed to merge multiple Excel files and generate logs for the
 Before you begin, ensure you have met the following requirements:
 
 - You have Python installed on your machine. [Download Python](https://www.python.org/downloads/)
+   - In the terminal write `brew install python` for Mac, or `winget install -e --id Python.Python.3` for Windows.
 - You have `pip` installed, which typically comes with Python.
 - You have `git` installed on your machine. [Download Git](https://git-scm.com/downloads)
 - You have Visual Studio Code installed. [Download VS Code](https://code.visualstudio.com/)
