@@ -230,7 +230,7 @@ def update_mastersheet_cell_value_n_comment(mastersheet_cell, port_waste_value, 
     # Update the formula in the master cell
     if mastersheet_cell is not None and port_waste_value is not None:
         if mastersheet_cell.value is not None:
-            formula = f"{mastersheet_cell.internal_value}+{port_waste_value}"
+            formula = f"={mastersheet_cell.internal_value}+{port_waste_value}"
         else:
             formula = f"=0+{port_waste_value}"
         mastersheet_cell.value = formula
