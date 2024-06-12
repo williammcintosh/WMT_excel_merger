@@ -244,6 +244,8 @@ def update_mastersheet_cell_value_n_comment(mastersheet_cell, port_waste_value, 
         # Add the comment if there's any
         if port_waste_note is not None:
             mastersheet_cell.comment = openpyxl.comments.Comment(port_waste_note, "Author")
+        # Print the new formula for debugging
+        log_message(f"Updated formula in cell {mastersheet_cell.coordinate}: {new_formula}")
     
 
 def excel_merger(input_year, input_month):
@@ -318,8 +320,8 @@ def excel_merger(input_year, input_month):
         """)
 
     # Save the changes to master.xlsx
-    new_file_name = f"Mastersheets_{formatted_datetime}.xlsx"
-    # new_file_name = f"Mastersheets.xlsx"
+    # new_file_name = f"Mastersheets_{formatted_datetime}.xlsx"
+    new_file_name = f"Mastersheets.xlsx"
     mastersheet_file.save(new_file_name)
     log_message(f"Master file saved as {new_file_name}")
     log_message("Logging ended.")
